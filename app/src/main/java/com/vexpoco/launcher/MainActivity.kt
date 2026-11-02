@@ -129,11 +129,7 @@ class MainActivity : ComponentActivity() {
     private fun applyRefreshPreference(requested: Int) {
         if (android.os.Build.VERSION.SDK_INT < 23) return
         val modes = window.windowManager.defaultDisplay.supportedModes
-        val chosen = modes
-            .filter { kotlin.math.abs(it.refreshRate - requested) < 2.0f }
-            .maxByOrNull { it.refreshRate }
-            ?: modes.maxByOrNull { it.refreshRate }
-            ?: return
+        val chosen = modes.minByOrNull { kotlin.math.abs(it.refreshRate - requested) } ?: return
         window.attributes = window.attributes.apply {
             preferredDisplayModeId = chosen.modeId
         }
@@ -168,12 +164,17 @@ class MainActivity : ComponentActivity() {
             setClassName(app.packageName, app.className)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
+        val durationAnimations = when (speedState.value) {
+            140 -> R.anim.vex_app_enter_140 to R.anim.vex_launcher_exit_140
+            180 -> R.anim.vex_app_enter_180 to R.anim.vex_launcher_exit_180
+            280 -> R.anim.vex_app_enter_280 to R.anim.vex_launcher_exit_280
+            else -> R.anim.vex_app_enter to R.anim.vex_launcher_exit
+        }
         val options = when (animationState.value) {
             "System Default" -> null
-            "Fade" -> ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in, android.R.anim.fade_out)
-            "Quick Scale", "VEX Zoom" -> ActivityOptions.makeCustomAnimation(
-                this, R.anim.vex_app_enter, R.anim.vex_launcher_exit
-            )
+            "Fade" -> ActivityOptions.makeCustomAnimation(this, R.anim.vex_fade_enter, R.anim.vex_fade_exit)
+            "Quick Scale" -> ActivityOptions.makeCustomAnimation(this, R.anim.vex_quick_enter, R.anim.vex_quick_exit)
+            "VEX Zoom" -> ActivityOptions.makeCustomAnimation(this, durationAnimations.first, durationAnimations.second)
             else -> null
         }
         runCatching {
